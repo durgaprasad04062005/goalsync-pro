@@ -84,13 +84,30 @@ app.use('*', (req, res) =>
 app.use(errorHandler);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-// ── Start ─────────────────────────────────────────────────────────────────────
 const start = async () => {
   console.log('Starting server...');
   console.log('PORT:', PORT);
   console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
 
   await connectDB();
+
+  // Auto-seed if database is empty (first deploy)
+  if (process.env.AUTO_SEED === 'true') {
+    try {
+      const { User } = require('./models');
+      const count = await User.countDocuments();
+      if (count === 0) {
+        console.log('📦 Empty database detected — running auto-seed...');
+        const seedDB = require('./database/seeders/autoSeed');
+        await seedDB();
+        console.log('✅ Auto-seed complete');
+      } else {
+        console.log(`ℹ️  Database has ${count} users — skipping auto-seed`);
+      }
+    } catch (e) {
+      console.error('Auto-seed failed (non-fatal):', e.message);
+    }
+  }
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 GoalSync Pro API running on port ${PORT}`);
