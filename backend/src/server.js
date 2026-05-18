@@ -65,11 +65,17 @@ app.use('*', (req, res) =>
 app.use(errorHandler);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
+// ── Start ─────────────────────────────────────────────────────────────────────
 const start = async () => {
+  console.log('Starting server...');
+  console.log('PORT:', PORT);
+  console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+
   await connectDB();
-  app.listen(PORT, () => {
-    console.log(`🚀 GoalSync Pro API  →  http://localhost:${PORT}`);
-    console.log(`📋 Health check     →  http://localhost:${PORT}/health`);
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 GoalSync Pro API running on port ${PORT}`);
+    console.log(`📋 Health check → /health`);
   });
 };
 
