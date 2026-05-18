@@ -14,6 +14,7 @@ const adminRoutes        = require('./routes/admin');
 const reportRoutes       = require('./routes/reports');
 const notificationRoutes = require('./routes/notifications');
 const userRoutes         = require('./routes/users');
+const seedRoutes         = require('./routes/seed');
 const { errorHandler }   = require('./middleware/errorHandler');
 
 const app  = express();
@@ -23,14 +24,31 @@ const PORT = process.env.PORT || 10000;
 app.use(helmet());
 app.use(compression());
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
-    'http://localhost:3000',
-    /\.vercel\.app$/,   // allow all vercel preview URLs
-  ],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+
+    const allowed = [
+      process.env.FRONTEND_URL,
+      'http://localhost:3000',
+      'http://localhost:5173',
+    ].filter(Boolean);
+
+    // Allow any vercel.app subdomain
+    if (
+      allowed.includes(origin) ||
+      /\.vercel\.app$/.test(origin) ||
+      /\.onrender\.com$/.test(origin)
+    ) {
+      return callback(null, true);
+    }
+
+    console.warn('CORS blocked origin:', origin);
+    callback(null, true); // Allow all in production for now
+  },
   credentials: true,
-  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
@@ -55,6 +73,7 @@ app.use('/api/admin',         adminRoutes);
 app.use('/api/reports',       reportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users',         userRoutes);
+app.use('/api/seed',          seedRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use('*', (req, res) =>

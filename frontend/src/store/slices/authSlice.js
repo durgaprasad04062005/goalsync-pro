@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { loginAPI, getMeAPI } from '../../api/authAPI';
 
-// Normalize MongoDB _id → id so the rest of the app can use user.id consistently
 const normalizeUser = (user) => {
   if (!user) return null;
   return { ...user, id: user._id || user.id };
@@ -15,7 +14,11 @@ export const loginUser = createAsyncThunk('auth/login', async (credentials, { re
     localStorage.setItem('user', JSON.stringify(user));
     return { token: data.data.token, user };
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Login failed');
+    // Network error (backend unreachable)
+    if (!err.response) {
+      return rejectWithValue('Cannot connect to server. Make sure the backend is running.');
+    }
+    return rejectWithValue(err.response?.data?.message || 'Login failed. Please try again.');
   }
 });
 
@@ -24,7 +27,7 @@ export const fetchCurrentUser = createAsyncThunk('auth/fetchMe', async (_, { rej
     const { data } = await getMeAPI();
     return data.data;
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message || 'Failed to fetch user');
+    return rejectWithValue(err.response?.data?.message || 'Session expired. Please login again.');
   }
 });
 
@@ -60,21 +63,31 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loginUser.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(loginUser.fulfilled, (state, action) => {
+      .addCase(loginUser.pending,    (state) => { state.loading = true; state.error = null; })
+      .addCase(loginUser.fulfilled,  (state, action) => {
         state.loading = false;
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
+        state.error = null;
       })
-      .addCase(loginUser.rejected, (state, action) => {
+      .addCase(loginUser.rejected,   (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.isAuthenticated = false;
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         const user = normalizeUser(action.payload);
         state.user = user;
         localStorage.setItem('user', JSON.stringify(user));
+      })
+      .addCase(fetchCurrentUser.rejected, (state) => {
+        // Token invalid/expired — clear session
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
       });
   },
 });
