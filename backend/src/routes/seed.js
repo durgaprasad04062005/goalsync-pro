@@ -1,13 +1,12 @@
 /**
- * ONE-TIME seed route — only works in non-production OR with secret key
- * Call: POST /api/seed  with body { "secret": "SEED_SECRET_KEY" }
- * DISABLE this route after seeding by removing it from server.js
+ * ONE-TIME seed route to populate the production database
+ * POST /api/seed  with body: { "secret": "goalsync-seed-2024" }
  */
 const express = require('express');
 const router  = express.Router();
 
 router.post('/', async (req, res) => {
-  const { secret } = req.body;
+  const { secret } = req.body || {};
   const SEED_SECRET = process.env.SEED_SECRET || 'goalsync-seed-2024';
 
   if (secret !== SEED_SECRET) {
@@ -26,60 +25,60 @@ router.post('/', async (req, res) => {
       QuarterlyAchievement.deleteMany({}),
     ]);
 
-    // Departments
+    // ── Departments ───────────────────────────────────────────────────────────
     const [engDept, salesDept] = await Department.insertMany([
-      { name: 'Engineering',     code: 'ENG', description: 'Software Engineering & Development' },
+      { name: 'Engineering',     code: 'ENG', description: 'Software Engineering' },
       { name: 'Sales',           code: 'SLS', description: 'Sales & Business Development' },
       { name: 'Human Resources', code: 'HR',  description: 'HR & People Operations' },
       { name: 'Finance',         code: 'FIN', description: 'Finance & Accounting' },
     ]);
 
-    // Admin
+    // ── Admin ─────────────────────────────────────────────────────────────────
     const admin = await User.create({
       employeeId: 'EMP001', firstName: 'System', lastName: 'Admin',
       email: 'admin@goalsync.com', password: 'Admin@123',
       role: 'admin', departmentId: engDept._id, designation: 'HR Administrator',
-      accountStatus: 'active',
+      accountStatus: 'active', isActive: true,
     });
 
-    // Managers
+    // ── Managers ──────────────────────────────────────────────────────────────
     const mgr1 = await User.create({
       employeeId: 'EMP002', firstName: 'Rajesh', lastName: 'Kumar',
       email: 'manager1@goalsync.com', password: 'Manager@123',
       role: 'manager', departmentId: engDept._id, designation: 'Engineering Manager',
-      accountStatus: 'active',
+      accountStatus: 'active', isActive: true,
     });
     const mgr2 = await User.create({
       employeeId: 'EMP003', firstName: 'Priya', lastName: 'Sharma',
       email: 'manager2@goalsync.com', password: 'Manager@123',
       role: 'manager', departmentId: salesDept._id, designation: 'Sales Manager',
-      accountStatus: 'active',
+      accountStatus: 'active', isActive: true,
     });
 
-    // Employees
+    // ── Employees ─────────────────────────────────────────────────────────────
     const [emp1, emp2, emp3, emp4, emp5] = await Promise.all([
-      User.create({ employeeId: 'EMP004', firstName: 'Amit',   lastName: 'Patel',  email: 'employee1@goalsync.com', password: 'Employee@123', role: 'employee', managerId: mgr1._id, departmentId: engDept._id,   designation: 'Senior Developer',   accountStatus: 'active' }),
-      User.create({ employeeId: 'EMP005', firstName: 'Sneha',  lastName: 'Reddy',  email: 'employee2@goalsync.com', password: 'Employee@123', role: 'employee', managerId: mgr1._id, departmentId: engDept._id,   designation: 'Frontend Developer', accountStatus: 'active' }),
-      User.create({ employeeId: 'EMP006', firstName: 'Vikram', lastName: 'Singh',  email: 'employee3@goalsync.com', password: 'Employee@123', role: 'employee', managerId: mgr2._id, departmentId: salesDept._id, designation: 'Sales Executive',    accountStatus: 'active' }),
-      User.create({ employeeId: 'EMP007', firstName: 'Ananya', lastName: 'Nair',   email: 'employee4@goalsync.com', password: 'Employee@123', role: 'employee', managerId: mgr2._id, departmentId: salesDept._id, designation: 'Account Manager',    accountStatus: 'active' }),
-      User.create({ employeeId: 'EMP008', firstName: 'Rohan',  lastName: 'Mehta',  email: 'employee5@goalsync.com', password: 'Employee@123', role: 'employee', managerId: mgr1._id, departmentId: engDept._id,   designation: 'Backend Developer',  accountStatus: 'active' }),
+      User.create({ employeeId: 'EMP004', firstName: 'Amit',   lastName: 'Patel',  email: 'employee1@goalsync.com', password: 'Employee@123', role: 'employee', managerId: mgr1._id, departmentId: engDept._id,   designation: 'Senior Developer',   accountStatus: 'active', isActive: true }),
+      User.create({ employeeId: 'EMP005', firstName: 'Sneha',  lastName: 'Reddy',  email: 'employee2@goalsync.com', password: 'Employee@123', role: 'employee', managerId: mgr1._id, departmentId: engDept._id,   designation: 'Frontend Developer', accountStatus: 'active', isActive: true }),
+      User.create({ employeeId: 'EMP006', firstName: 'Vikram', lastName: 'Singh',  email: 'employee3@goalsync.com', password: 'Employee@123', role: 'employee', managerId: mgr2._id, departmentId: salesDept._id, designation: 'Sales Executive',    accountStatus: 'active', isActive: true }),
+      User.create({ employeeId: 'EMP007', firstName: 'Ananya', lastName: 'Nair',   email: 'employee4@goalsync.com', password: 'Employee@123', role: 'employee', managerId: mgr2._id, departmentId: salesDept._id, designation: 'Account Manager',    accountStatus: 'active', isActive: true }),
+      User.create({ employeeId: 'EMP008', firstName: 'Rohan',  lastName: 'Mehta',  email: 'employee5@goalsync.com', password: 'Employee@123', role: 'employee', managerId: mgr1._id, departmentId: engDept._id,   designation: 'Backend Developer',  accountStatus: 'active', isActive: true }),
     ]);
 
-    // Goal Cycle
+    // ── Goal Cycle ────────────────────────────────────────────────────────────
     const cycle = await GoalCycle.create({
       name: 'FY 2024-25', startDate: new Date('2024-04-01'), endDate: new Date('2025-03-31'),
       isActive: true, createdBy: admin._id, description: 'Financial Year 2024-25',
     });
 
-    // Goals for emp1
+    // ── Goals for emp1 (approved) ─────────────────────────────────────────────
     const [g1, g2, g3, g4] = await Promise.all([
-      Goal.create({ userId: emp1._id, cycleId: cycle._id, thrustArea: 'Technical Excellence', title: 'Reduce API Response Time',      uom: 'numeric_max', target: 200, weightage: 30, status: 'approved', approvedBy: mgr1._id, approvedAt: new Date(), deadline: new Date('2025-03-31') }),
+      Goal.create({ userId: emp1._id, cycleId: cycle._id, thrustArea: 'Technical Excellence', title: 'Reduce API Response Time',       uom: 'numeric_max', target: 200, weightage: 30, status: 'approved', approvedBy: mgr1._id, approvedAt: new Date(), deadline: new Date('2025-03-31') }),
       Goal.create({ userId: emp1._id, cycleId: cycle._id, thrustArea: 'Code Quality',         title: 'Achieve 80% Unit Test Coverage', uom: 'percentage',  target: 80,  weightage: 25, status: 'approved', approvedBy: mgr1._id, approvedAt: new Date(), deadline: new Date('2025-03-31') }),
       Goal.create({ userId: emp1._id, cycleId: cycle._id, thrustArea: 'Delivery',             title: 'On-time Feature Delivery',       uom: 'percentage',  target: 95,  weightage: 25, status: 'approved', approvedBy: mgr1._id, approvedAt: new Date(), deadline: new Date('2025-03-31') }),
       Goal.create({ userId: emp1._id, cycleId: cycle._id, thrustArea: 'Learning',             title: 'Complete AWS Certification',     uom: 'zero_based',  target: 1,   weightage: 20, status: 'approved', approvedBy: mgr1._id, approvedAt: new Date(), deadline: new Date('2025-03-31') }),
     ]);
 
-    // Achievements
+    // ── Achievements ──────────────────────────────────────────────────────────
     await QuarterlyAchievement.insertMany([
       { goalId: g1._id, userId: emp1._id, quarter: 'Q1', year: 2024, actualAchievement: 280, status: 'on_track',  progressPercentage: 71.4, employeeComment: 'Optimized DB queries' },
       { goalId: g1._id, userId: emp1._id, quarter: 'Q2', year: 2024, actualAchievement: 220, status: 'on_track',  progressPercentage: 90.9, employeeComment: 'Added caching layer' },
@@ -88,14 +87,14 @@ router.post('/', async (req, res) => {
       { goalId: g3._id, userId: emp1._id, quarter: 'Q1', year: 2024, actualAchievement: 92,  status: 'on_track',  progressPercentage: 96.8, employeeComment: 'Missed one sprint' },
     ]);
 
-    // Goals for emp2 (submitted)
+    // ── Goals for emp2 (submitted, pending approval) ──────────────────────────
     await Promise.all([
       Goal.create({ userId: emp2._id, cycleId: cycle._id, thrustArea: 'UI/UX',        title: 'Improve Core Web Vitals', uom: 'numeric_max', target: 2.5, weightage: 35, status: 'submitted' }),
       Goal.create({ userId: emp2._id, cycleId: cycle._id, thrustArea: 'Accessibility', title: 'WCAG 2.1 AA Compliance',  uom: 'percentage',  target: 100, weightage: 30, status: 'submitted' }),
       Goal.create({ userId: emp2._id, cycleId: cycle._id, thrustArea: 'Performance',   title: 'Reduce Bundle Size 30%',  uom: 'percentage',  target: 30,  weightage: 35, status: 'submitted' }),
     ]);
 
-    // Goals for emp3 (sales, approved)
+    // ── Goals for emp3 (sales, approved) ─────────────────────────────────────
     await Promise.all([
       Goal.create({ userId: emp3._id, cycleId: cycle._id, thrustArea: 'Revenue',              title: 'Achieve Quarterly Sales Target', uom: 'numeric_min', target: 5000000, weightage: 40, status: 'approved', approvedBy: mgr2._id, approvedAt: new Date() }),
       Goal.create({ userId: emp3._id, cycleId: cycle._id, thrustArea: 'Customer Acquisition', title: 'New Client Onboarding',          uom: 'numeric_min', target: 15,      weightage: 35, status: 'approved', approvedBy: mgr2._id, approvedAt: new Date() }),
@@ -105,6 +104,9 @@ router.post('/', async (req, res) => {
     res.json({
       success: true,
       message: '✅ Database seeded successfully!',
+      counts: {
+        departments: 4, users: 8, cycles: 1, goals: 10, achievements: 5,
+      },
       credentials: {
         admin:     'admin@goalsync.com / Admin@123',
         manager1:  'manager1@goalsync.com / Manager@123',
@@ -118,6 +120,11 @@ router.post('/', async (req, res) => {
     console.error('Seed error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
+});
+
+// GET /api/seed — quick check that route is alive
+router.get('/', (req, res) => {
+  res.json({ success: true, message: 'Seed route is active. Use POST with secret to seed.' });
 });
 
 module.exports = router;
