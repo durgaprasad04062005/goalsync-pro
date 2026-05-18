@@ -73,5 +73,8 @@ const start = async () => {
   });
 };
 
-start();
+start().catch((error) => {
+  console.error('STARTUP ERROR:', error);
+  process.exit(1);
+});
 module.exports = app;
