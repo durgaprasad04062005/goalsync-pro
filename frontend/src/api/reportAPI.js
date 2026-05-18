@@ -1,0 +1,21 @@
+import api from './axios';
+
+export const downloadCSVReportAPI = (params) =>
+  api.get('/reports/csv', { params, responseType: 'blob' });
+
+export const downloadExcelReportAPI = (params) =>
+  api.get('/reports/excel', { params, responseType: 'blob' });
+
+export const getAnalyticsDashboardAPI = (params) =>
+  api.get('/reports/analytics', { params });
+
+export const downloadFile = (blob, filename) => {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
